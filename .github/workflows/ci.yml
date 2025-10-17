@@ -17,6 +17,7 @@ jobs:
           - { otp: "25", elixir: "1.14" }
           - { otp: "26", elixir: "1.16" }
           - { otp: "27", elixir: "1.18" }
+          - { otp: "28", elixir: "1.19" }
 
     env:
       MIX_ENV: test
