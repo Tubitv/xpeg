@@ -175,18 +175,23 @@ defmodule Xpeg.Codegen do
         end
 
       {:code, code} ->
-        quote location: :keep do
-          def parse(unquote(ip), s, si, ctx, back_stack, ret_stack, cap_stack, captures) do
-            {cap_stack, captures} = Xpeg.collect_captures(cap_stack, captures)
-            func = unquote(code)
-
-            {captures, ctx} =
-              case unquote(options[:userdata]) do
-                true -> func.(captures, ctx)
-                _ -> {func.(captures), ctx}
-              end
-
-            parse(unquote(ip + 1), s, si, ctx, back_stack, ret_stack, cap_stack, captures)
+        if options[:userdata] do
+          quote location: :keep do
+            def parse(unquote(ip), s, si, ctx, back_stack, ret_stack, cap_stack, captures) do
+              {cap_stack, captures} = Xpeg.collect_captures(cap_stack, captures)
+              func = unquote(code)
+              {captures, ctx} = func.(captures, ctx)
+              parse(unquote(ip + 1), s, si, ctx, back_stack, ret_stack, cap_stack, captures)
+            end
+          end
+        else
+          quote location: :keep do
+            def parse(unquote(ip), s, si, ctx, back_stack, ret_stack, cap_stack, captures) do
+              {cap_stack, captures} = Xpeg.collect_captures(cap_stack, captures)
+              func = unquote(code)
+              captures = func.(captures)
+              parse(unquote(ip + 1), s, si, ctx, back_stack, ret_stack, cap_stack, captures)
+            end
           end
         end
 
