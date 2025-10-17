@@ -10,8 +10,8 @@ defmodule ExamplesTest do
       peg Dict do
         Dict <- Pair * star("," * Pair) * !1
         Pair <- Word * "=" * Number * fn [a, b | cs] -> [{b, a} | cs] end
-        Word <- str(+{'a'..'z'})
-        Number <- int(+{'0'..'9'})
+        Word <- str(+{~c"a"..~c"z"})
+        Number <- int(+{~c"0"..~c"9"})
       end
 
     r = match(p, "grass=4,horse=1,star=2")
@@ -26,9 +26,9 @@ defmodule ExamplesTest do
         Exp <- Term * star(Exp_op)
         Term <- Factor * star(Term_op)
         Factor <- Number | "(" * Exp * ")"
-        Number <- int(+{'0'..'9'})
-        Term_op <- str({'*', '/'}) * Factor * fn [b, op, a | cs] -> [{op, a, b} | cs] end
-        Exp_op <- str({'+', '-'}) * Term * fn [b, op, a | cs] -> [{op, a, b} | cs] end
+        Number <- int(+{~c"0"..~c"9"})
+        Term_op <- str({~c"*", ~c"/"}) * Factor * fn [b, op, a | cs] -> [{op, a, b} | cs] end
+        Exp_op <- str({~c"+", ~c"-"}) * Term * fn [b, op, a | cs] -> [{op, a, b} | cs] end
       end
 
     cs = match(p, "1+(2-3*4)/5").captures
@@ -41,7 +41,7 @@ defmodule ExamplesTest do
     p =
       peg Json do
         # White space
-        S <- star({' ', '\t', '\r', '\n'})
+        S <- star({" ", "\t", "\r", "\n"})
 
         # Basic atoms
         true <- "true" * fn cs -> [true | cs] end
@@ -49,24 +49,24 @@ defmodule ExamplesTest do
         Null <- "null" * fn cs -> [nil | cs] end
 
         # Strings
-        Xdigit <- {'0'..'9', 'a'..'f', 'A'..'F'}
-        Unicode_escape <- 'u' * Xdigit[4]
-        Escape <- '\\' * ({'"', '\\', '/', 'b', 'f', 'n', 'r', 't'} | Unicode_escape)
-        String_body <- star(Escape) * star(+({'\x20'..'\x7f'} - {'"'} - {'\\'}) * star(Escape))
-        String <- '"' * str(String_body) * '"'
+        Xdigit <- {~c"0"..~c"9", ~c"a"..~c"f", ~c"A"..~c"F"}
+        Unicode_escape <- "u" * Xdigit[4]
+        Escape <- "\\" * ({~c"\"", ~c"\\", ~c"/", ~c"b", ~c"f", ~c"n", ~c"r", ~c"t"} | Unicode_escape)
+        String_body <- star(Escape) * star(+({~c" "..~c"\x7f"} - {~c"\""} - {~c"\\"}) * star(Escape))
+        String <- "\"" * str(String_body) * "\""
 
         # Numbers are converted to Elixir float
-        Minus <- '-'
-        Int_part <- '0' | {'1'..'9'} * star({'0'..'9'})
-        Fract_part <- "." * +{'0'..'9'}
-        Exp_part <- {'e', 'E'} * opt({'+', '-'}) * +{'0'..'9'}
+        Minus <- "-"
+        Int_part <- "0" | {~c"1"..~c"9"} * star({~c"0"..~c"9"})
+        Fract_part <- "." * +{~c"0"..~c"9"}
+        Exp_part <- {~c"e", ~c"E"} * opt({~c"+", ~c"-"}) * +{~c"0"..~c"9"}
         Number <- float(opt(Minus) * Int_part * opt(Fract_part) * opt(Exp_part))
 
         # Objects are represented by an Elixir map
         Obj_pair <-
           S * String * S * ":" * Value * fn [v, k, obj | cs] -> [Map.put(obj, k, v) | cs] end
 
-        Object <- '{' * fn cs -> [%{} | cs] end * (Obj_pair * star("," * Obj_pair) | S) * "}"
+        Object <- "{" * fn cs -> [%{} | cs] end * (Obj_pair * star("," * Obj_pair) | S) * "}"
 
         # Arrays are represented by an Elixir list
         Array_elem <- Value * fn [v, a | cs] -> [[v | a] | cs] end
